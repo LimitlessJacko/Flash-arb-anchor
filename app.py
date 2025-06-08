@@ -12,6 +12,7 @@ import json
 import time
 from arbitrage_engine import create_engine, get_engine
 from arbitrage_wrapper import ArbitrageEngine as CppEngine
+from config import get_config, get_wallet_address, update_wallet_address, update_exchange_api_key
 import os
 
 app = Flask(__name__)
@@ -57,18 +58,12 @@ def start_bot():
         return jsonify({'error': 'Bot is already running'}), 400
     
     try:
-        # Get configuration from request
+        # Get configuration from request or use defaults
         config = request.json or {}
         
-        # Default configuration
-        default_config = {
-            'min_profit_threshold': 0.001,
-            'max_gas_cost': 0.01,
-            'max_slippage': 0.02,
-            'max_position_size': 1000.0,
-            'solana_rpc_url': 'https://api.mainnet-beta.solana.com'
-        }
-        default_config.update(config)
+        # Load default configuration from config.py
+        default_config = get_config()
+        default_config.update(config)  # Override with any provided values
         
         # Create engines
         engine = create_engine(default_config)
@@ -180,14 +175,28 @@ def execute_cpp_trade(index):
             return jsonify({'error': str(e)}), 500
     return jsonify({'error': 'C++ engine not initialized'}), 400
 
-@app.route('/api/health')
-def health_check():
-    """Health check endpoint"""
+@app.route('/api/wallet')
+def get_wallet_info():
+    """Get wallet information"""
     return jsonify({
-        'status': 'healthy',
-        'timestamp': time.time(),
-        'version': '1.0.0'
+        'address': get_wallet_address(),
+        'configured': True
     })
+
+@app.route('/api/wallet', methods=['POST'])
+def update_wallet():
+    """Update wallet address"""
+    data = request.json
+    new_address = data.get('address')
+    
+    if new_address:
+        success = update_wallet_address(new_address)
+        if success:
+            return jsonify({'message': 'Wallet address updated successfully'})
+        else:
+            return jsonify({'error': 'Failed to update wallet address'}), 400
+    
+    return jsonify({'error': 'No wallet address provided'}), 400
 
 @app.route('/download/<filename>')
 def download_file(filename):
@@ -203,7 +212,9 @@ if __name__ == '__main__':
     os.makedirs('static', exist_ok=True)
     
     print("Starting Flash Arbitrage Bot Web Interface...")
+    print(f"Configured for wallet: {get_wallet_address()}")
     print("Dashboard will be available at: http://localhost:5000")
+    print(f"Repository: https://github.com/LimitlessJacko/Flash-arb-anchor")
     
     app.run(host='0.0.0.0', port=5000, debug=True)
 

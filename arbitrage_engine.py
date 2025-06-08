@@ -19,6 +19,9 @@ from solana.publickey import PublicKey
 from solana.transaction import Transaction
 import numpy as np
 
+# Import configuration
+from config import get_config, get_wallet_address
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -54,8 +57,13 @@ class MarketData:
 class FlashArbitrageEngine:
     """Enhanced Flash Arbitrage Engine with unlimited profit potential"""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict = None):
+        # Use provided config or load from config.py
+        if config is None:
+            config = get_config()
+        
         self.config = config
+        self.wallet_address = get_wallet_address()
         self.opportunities = []
         self.market_data = {}
         self.running = False
@@ -63,11 +71,13 @@ class FlashArbitrageEngine:
         self.successful_trades = 0
         self.failed_trades = 0
         
+        logger.info(f"Initializing Flash Arbitrage Engine for wallet: {self.wallet_address}")
+        
         # Enhanced configuration for unlimited profit
-        self.min_profit_threshold = config.get('min_profit_threshold', 0.001)  # 0.1% minimum
-        self.max_gas_cost = config.get('max_gas_cost', 0.01)  # 0.01 SOL max gas
-        self.max_slippage = config.get('max_slippage', 0.02)  # 2% max slippage
-        self.max_position_size = config.get('max_position_size', 1000.0)  # Max position size
+        self.min_profit_threshold = config.get('min_profit_threshold', 0.0005)  # 0.05% minimum
+        self.max_gas_cost = config.get('max_gas_cost', 0.02)  # 0.02 SOL max gas
+        self.max_slippage = config.get('max_slippage', 0.03)  # 3% max slippage
+        self.max_position_size = config.get('max_position_size', 5000.0)  # Max position size
         
         # Solana RPC client
         self.solana_client = AsyncClient(
@@ -416,14 +426,11 @@ def get_engine() -> Optional[FlashArbitrageEngine]:
     return engine
 
 if __name__ == "__main__":
-    # Example configuration
-    config = {
-        'min_profit_threshold': 0.001,  # 0.1% minimum profit
-        'max_gas_cost': 0.01,           # 0.01 SOL max gas
-        'max_slippage': 0.02,           # 2% max slippage
-        'max_position_size': 1000.0,    # Max 1000 units
-        'solana_rpc_url': 'https://api.mainnet-beta.solana.com'
-    }
+    # Load configuration from config.py
+    config = get_config()
+    
+    logger.info(f"Starting Flash Arbitrage Bot for wallet: {get_wallet_address()}")
+    logger.info(f"Configuration: Min Profit: {config['min_profit_threshold']*100:.3f}%, Max Position: {config['max_position_size']} SOL")
     
     # Create and start engine
     arbitrage_engine = create_engine(config)
