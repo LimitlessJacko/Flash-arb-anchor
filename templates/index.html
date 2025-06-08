@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flash Arbitrage Bot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-robot"></i> Flash Arbitrage Bot</h1>
+                <div class="header-controls">
+                    <div class="status-indicator" id="statusIndicator">
+                        <span class="status-dot"></span>
+                        <span id="statusText">Stopped</span>
+                    </div>
+                    <button id="startBtn" class="btn btn-success">
+                        <i class="fas fa-play"></i> Start Bot
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger" style="display: none;">
+                        <i class="fas fa-stop"></i> Stop Bot
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="main-content">
+            <!-- Statistics Cards -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Total Profit</h3>
+                            <p class="stat-value" id="totalProfit">0.0000 SOL</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Success Rate</h3>
+                            <p class="stat-value" id="successRate">0%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Total Trades</h3>
+                            <p class="stat-value" id="totalTrades">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Opportunities</h3>
+                            <p class="stat-value" id="opportunitiesCount">0</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration Panel -->
+            <section class="config-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-cog"></i> Configuration</h2>
+                        <button id="saveConfigBtn" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Config
+                        </button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="config-grid">
+                            <div class="config-item">
+                                <label for="minProfit">Min Profit Threshold (%)</label>
+                                <input type="number" id="minProfit" step="0.001" value="0.1" min="0">
+                            </div>
+                            <div class="config-item">
+                                <label for="maxGas">Max Gas Cost (SOL)</label>
+                                <input type="number" id="maxGas" step="0.001" value="0.01" min="0">
+                            </div>
+                            <div class="config-item">
+                                <label for="maxSlippage">Max Slippage (%)</label>
+                                <input type="number" id="maxSlippage" step="0.1" value="2.0" min="0">
+                            </div>
+                            <div class="config-item">
+                                <label for="maxPosition">Max Position Size</label>
+                                <input type="number" id="maxPosition" step="100" value="1000" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Opportunities Table -->
+            <section class="opportunities-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-list"></i> Current Opportunities</h2>
+                        <button id="refreshOpportunities" class="btn btn-secondary">
+                            <i class="fas fa-refresh"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="table-container">
+                            <table class="opportunities-table">
+                                <thead>
+                                    <tr>
+                                        <th>Token Pair</th>
+                                        <th>Exchange A</th>
+                                        <th>Exchange B</th>
+                                        <th>Price Diff</th>
+                                        <th>Profit %</th>
+                                        <th>Net Profit</th>
+                                        <th>Confidence</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="opportunitiesTable">
+                                    <tr>
+                                        <td colspan="8" class="no-data">No opportunities found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance Chart -->
+            <section class="chart-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-chart-area"></i> Performance Chart</h2>
+                    </div>
+                    <div class="panel-content">
+                        <canvas id="performanceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Engine Comparison -->
+            <section class="engine-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-microchip"></i> Engine Comparison</h2>
+                    </div>
+                    <div class="panel-content">
+                        <div class="engine-grid">
+                            <div class="engine-card">
+                                <h3>Python Engine</h3>
+                                <div class="engine-stats" id="pythonEngineStats">
+                                    <p>Profit: <span id="pythonProfit">0.0000 SOL</span></p>
+                                    <p>Trades: <span id="pythonTrades">0</span></p>
+                                    <p>Success Rate: <span id="pythonSuccessRate">0%</span></p>
+                                </div>
+                            </div>
+                            <div class="engine-card">
+                                <h3>C++ Engine (.so)</h3>
+                                <div class="engine-stats" id="cppEngineStats">
+                                    <p>Profit: <span id="cppProfit">0.0000 SOL</span></p>
+                                    <p>Trades: <span id="cppTrades">0</span></p>
+                                    <p>Success Rate: <span id="cppSuccessRate">0%</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Download Section -->
+            <section class="download-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2><i class="fas fa-download"></i> Downloads</h2>
+                    </div>
+                    <div class="panel-content">
+                        <div class="download-grid">
+                            <div class="download-item">
+                                <i class="fas fa-file-code"></i>
+                                <h4>Shared Library (.so)</h4>
+                                <p>High-performance C++ arbitrage engine</p>
+                                <a href="/download/libarbitrage_engine.so" class="btn btn-outline">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </div>
+                            <div class="download-item">
+                                <i class="fas fa-file-archive"></i>
+                                <h4>Source Code</h4>
+                                <p>Complete bot source code and configuration</p>
+                                <button class="btn btn-outline" onclick="downloadSourceCode()">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Setup Modal -->
+    <div id="setupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>One-Click Setup</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setup-steps">
+                    <div class="setup-step active">
+                        <h3>Step 1: Wallet Configuration</h3>
+                        <div class="form-group">
+                            <label for="walletAddress">Solana Wallet Address</label>
+                            <input type="text" id="walletAddress" placeholder="Enter your Solana wallet address">
+                        </div>
+                        <div class="form-group">
+                            <label for="privateKey">Private Key (Optional)</label>
+                            <input type="password" id="privateKey" placeholder="Enter private key for automated trading">
+                        </div>
+                    </div>
+                    
+                    <div class="setup-step">
+                        <h3>Step 2: Exchange API Keys</h3>
+                        <div class="form-group">
+                            <label for="raydiumApi">Raydium API Key</label>
+                            <input type="text" id="raydiumApi" placeholder="Enter Raydium API key">
+                        </div>
+                        <div class="form-group">
+                            <label for="orcaApi">Orca API Key</label>
+                            <input type="text" id="orcaApi" placeholder="Enter Orca API key">
+                        </div>
+                    </div>
+                    
+                    <div class="setup-step">
+                        <h3>Step 3: Risk Parameters</h3>
+                        <div class="form-group">
+                            <label for="setupMinProfit">Minimum Profit (%)</label>
+                            <input type="number" id="setupMinProfit" value="0.1" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="setupMaxRisk">Maximum Risk (SOL)</label>
+                            <input type="number" id="setupMaxRisk" value="10" step="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setup-actions">
+                    <button id="prevStep" class="btn btn-secondary">Previous</button>
+                    <button id="nextStep" class="btn btn-primary">Next</button>
+                    <button id="completeSetup" class="btn btn-success" style="display: none;">Complete Setup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
+
