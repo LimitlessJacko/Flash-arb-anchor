@@ -1,0 +1,29 @@
+# Windows-compatible requirements for Flash Arbitrage Bot
+# Fixed versions to avoid compatibility issues
+
+# Core web framework
+flask==2.3.3
+flask-cors==4.0.0
+
+# HTTP and async libraries
+aiohttp==3.8.5
+websockets==11.0.3
+requests==2.31.0
+
+# Solana libraries (Windows compatible versions)
+solana==0.30.2
+
+# Data processing
+numpy==1.24.3
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# Windows-specific fixes
+setuptools==68.2.2
+pip==23.2.1
+wheel==0.41.2
+
+# Alternative packages for Windows compatibility
+asyncio-mqtt==0.13.0
+
